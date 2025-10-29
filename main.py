@@ -129,12 +129,12 @@ def select_stream(stream, button, mode):
     # reset previous highlight
     if mode == "video":
         if selected_video_btn:
-            selected_video_btn.configure(fg_color=customtkinter.ThemeManager.theme["CTkButton"]["fg_color"])
+            selected_video_btn.configure(fg_color=ctk.ThemeManager.theme["CTkButton"]["fg_color"])
         selected_video = stream
         selected_video_btn = button
     else:
         if selected_audio_btn:
-            selected_audio_btn.configure(fg_color=customtkinter.ThemeManager.theme["CTkButton"]["fg_color"])
+            selected_audio_btn.configure(fg_color=ctk.ThemeManager.theme["CTkButton"]["fg_color"])
         selected_audio_btn = button
         selected_audio = stream
 
