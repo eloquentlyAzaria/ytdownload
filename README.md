@@ -1,3 +1,3 @@
 # ytdownload
 
-a simple GUI based programm that downloads youtube videos from their URL 
+a simple GUI based program that downloads YouTube videos from their URL 
