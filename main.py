@@ -87,6 +87,10 @@ def _fetch_thread():
         yt, title, thumbnail, video, audio = getvideoinfo(link)
         root.after(0, lambda: title_label.configure(text=title))
 
+        # set default filename
+        safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '_')).rstrip()
+        root.after(0, lambda t=safe_title: filename_var.set(t))
+
         # thumbnail
         try:
             response = requests.get(thumbnail, timeout=10)
@@ -156,8 +160,8 @@ def _download_thread():
     print(f"Download mode: {choice}")
     root.after(0, lambda: status_label.configure(text="Downloading...", text_color="white"))
 
-    video_path = selected_video.download(filename_prefix="video_") if selected_video else None
-    audio_path = selected_audio.download(filename_prefix="audio_") if selected_audio else None
+    video_path = None
+    audio_path = None
 
     try:
         if choice == "video":
@@ -183,16 +187,20 @@ def _download_thread():
         elif choice == "both":
             if selected_video and selected_audio:
                 print("Downloading video stream...")
-                video_path = selected_video.download(filename_prefix="video_")
+                video_path = selected_video.download(filename_prefix="video_") if selected_video else None
                 print("Downloading audio stream...")
-                audio_path = selected_audio.download(filename_prefix="audio_")
+                audio_path = selected_audio.download(filename_prefix="audio_") if selected_audio else None
 
                 #---DIAGNOSTIC PRINT---
                 print(f"FFmpeg INPUT 1 (Video): Path='{video_path}' Type={type(video_path)}")
                 print(f"FFmpeg INPUT 2 (Audio): Path='{audio_path}' Type={type(audio_path)}")
                 #----------------------
 
-                output_path = "output.mp4"
+                custom_name = filename_var.get().strip()
+                if not custom_name:
+                    custom_name = "output"  # fallback if user clears field
+
+                output_path = f"{custom_name}.mp4"  # use the custom name
                 print(f"Merging streams into {output_path}...")
 
                 (
@@ -201,15 +209,14 @@ def _download_thread():
                         ffmpeg.input(audio_path),
                         v=1,  # number of video streams = 1
                         a=1,  # number of audio streams = 1
-                    ).output(output_path)
+                    ).output(output_path, vcodec='copy', acodec='copy')
                     .run(overwrite_output=True)
                 )
                 # taken from https://stackoverflow.com/questions/56973205
                 # details about concat https://ffmpeg.org/ffmpeg-filters.html#concat
 
                 print("Merged and saved as", output_path)
-                root.after(0, lambda: status_label.configure(text=f"Merged and saved as {output_path}",
-                                                             text_color="green"))
+                root.after(0, lambda: status_label.configure(text=f"Merged and saved as {output_path}",  text_color="green"))
 
             else:
                 print("Select both video and audio first.")
@@ -235,7 +242,7 @@ def _download_thread():
 # --- GUI ---
 root = ctk.CTk()
 root.title("YouTube Video Downloader")
-root.geometry("800x650")
+root.geometry("900x700")
 
 # input and fetch button section
 input_frame = ctk.CTkFrame(root)
@@ -270,8 +277,17 @@ audio_scroll.pack(side="right", fill="both", expand=True, padx=5)
 bottom_frame = ctk.CTkFrame(root)
 bottom_frame.pack(pady=15, fill="x", padx=20)  # fill x
 
+# choose file name
+filename_frame = ctk.CTkFrame(bottom_frame)
+filename_frame.pack(side="top", fill="x", padx=10, pady=(0, 10))
+ctk.CTkLabel(filename_frame, text="Name for output file: ").pack(side="left", padx=(10, 5))
+# the default name will be set dynamically in _fetch_thread
+filename_var = ctk.StringVar(value="output")
+filename_entry = ctk.CTkEntry(filename_frame, textvariable=filename_var, placeholder_text="Enter custom filename...")
+filename_entry.pack(side="left", expand=True, fill="x", padx=(0, 10))
+
 radio_frame = ctk.CTkFrame(bottom_frame)
-radio_frame.pack(side="left", padx=(10, 0))
+radio_frame.pack(side="left", padx=(10, 0), pady=(10, 0))
 
 choice_var = ctk.StringVar(value="both")
 
