@@ -156,8 +156,8 @@ def _download_thread():
     print(f"Download mode: {choice}")
     root.after(0, lambda: status_label.configure(text="Downloading...", text_color="white"))
 
-    video_path = selected_video.download(filename_prefix="video_")
-    audio_path = selected_audio.download(filename_prefix="audio_")
+    video_path = selected_video.download(filename_prefix="video_") if selected_video else None
+    audio_path = selected_audio.download(filename_prefix="audio_") if selected_audio else None
 
     try:
         if choice == "video":
@@ -196,12 +196,17 @@ def _download_thread():
                 print(f"Merging streams into {output_path}...")
 
                 (
-                    ffmpeg
-                    .input(video_path)
-                    .input(audio_path)
-                    .output(output_path, vcodec='copy', acodec='aac')
+                    ffmpeg.concat(
+                        ffmpeg.input(video_path),
+                        ffmpeg.input(audio_path),
+                        v=1,  # number of video streams = 1
+                        a=1,  # number of audio streams = 1
+                    ).output(output_path)
                     .run(overwrite_output=True)
                 )
+                # taken from https://stackoverflow.com/questions/56973205
+                # details about concat https://ffmpeg.org/ffmpeg-filters.html#concat
+
                 print("Merged and saved as", output_path)
                 root.after(0, lambda: status_label.configure(text=f"Merged and saved as {output_path}",
                                                              text_color="green"))
