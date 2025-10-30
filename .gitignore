@@ -1,1 +1,4 @@
 output.mp4
+.idea/*
+!.idea/codeStyles
+!.idea/inspectionProfiles
