@@ -2,3 +2,4 @@ output.mp4
 .idea/*
 !.idea/codeStyles
 !.idea/inspectionProfiles
+theme_preference.txt
